@@ -21,7 +21,7 @@ from fpdf import FPDF
 # --------------------------------------------------------------------------
 # CONFIG
 # --------------------------------------------------------------------------
-CENTRE_NAME = "St. Anselm's Anglican Child Development Centre"
+CENTRE_NAME = "ST. ANSELM'S ANGLICAN CHILD DEVELOPMENT CENTER"
 LOG_FILE = "home_visitation_records.csv"
 
 st.set_page_config(page_title="Home Visitation Form", page_icon="🏠", layout="centered")
@@ -58,19 +58,22 @@ class VisitationPDF(FPDF):
 
     def field_line(self, label, value):
         self.set_font("Helvetica", "B", 9)
-        self.cell(48, 6, label, border=0)
+        self.cell(0, 5, label, ln=1)
         self.set_font("Helvetica", "", 9)
-        self.multi_cell(0, 6, str(value) if value else "-")
+        text = str(value) if value not in (None, "") else "-"
+        self.multi_cell(0, 5, text)
+        self.ln(1)
 
     def checklist_line(self, label, options, selected):
         self.set_font("Helvetica", "B", 9)
-        self.cell(48, 6, label, border=0)
+        self.cell(0, 5, label, ln=1)
         self.set_font("Helvetica", "", 9)
         parts = []
         for opt in options:
             mark = "[X]" if opt in selected else "[ ]"
             parts.append(f"{mark} {opt}")
-        self.multi_cell(0, 6, "   ".join(parts))
+        self.multi_cell(0, 5, "   ".join(parts))
+        self.ln(1)
 
 
 def generate_pdf(data: dict) -> bytes:
@@ -240,7 +243,7 @@ with st.form("visitation_form", clear_on_submit=True):
         date_of_visit = st.date_input("Date of Visit", value=date.today())
         child_name = st.text_input("Child's Name")
     with c2:
-        child_no = st.text_input("Child's No.", value="GH ")
+        child_no = st.text_input("Child's No.", value="GH761000")
 
     st.subheader("Reason(s) for Visit")
     reasons = st.multiselect(
