@@ -18,6 +18,7 @@ from datetime import date, datetime
 
 import streamlit as st
 from fpdf import FPDF
+from PIL import Image
 
 # --------------------------------------------------------------------------
 # CONFIG
@@ -133,7 +134,7 @@ class VisitationPDF(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(140, 140, 140)
-        self.cell(0, 10, f" {datetime.now().strftime('%d %b %Y, %H:%M')}  |  Page {self.page_no()}", align="C")
+        self.cell(0, 10, f"Generated {datetime.now().strftime('%d %b %Y, %H:%M')}  |  Page {self.page_no()}", align="C")
 
 
 def checkbox(pdf: FPDF, checked: bool, size=4.2):
@@ -204,13 +205,21 @@ def build_pdf(data, logo_bytes=None) -> bytes:
     pdf.set_margins(14, 14, 14)
 
     # ----- Header -----
+    # Logo is stacked centered ABOVE the org name (rather than in a corner)
+    # so it never collides with the long centered title text.
+    y_cursor = 12
     if logo_bytes:
         try:
-            pdf.image(io.BytesIO(logo_bytes), x=14, y=12, w=20)
+            logo_w = 24
+            with Image.open(io.BytesIO(logo_bytes)) as im:
+                logo_h = logo_w * (im.height / im.width)
+            logo_x = (pdf.w - logo_w) / 2
+            pdf.image(io.BytesIO(logo_bytes), x=logo_x, y=y_cursor, w=logo_w)
+            y_cursor += logo_h + 3
         except Exception:
             pass
 
-    pdf.set_xy(14, 12)
+    pdf.set_xy(14, y_cursor)
     pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(*NAVY)
     pdf.cell(0, 7, ORG_NAME, align="C", new_x="LMARGIN", new_y="NEXT")
