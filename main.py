@@ -133,7 +133,7 @@ class VisitationPDF(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(140, 140, 140)
-        self.cell(0, 10,Page {self.page_no()}", align="C")
+        self.cell(0, 10, f" {datetime.now().strftime('%d %b %Y, %H:%M')}  |  Page {self.page_no()}", align="C")
 
 
 def checkbox(pdf: FPDF, checked: bool, size=4.2):
