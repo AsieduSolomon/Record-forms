@@ -1,10 +1,13 @@
 """
 ST. ANSELM'S ANGLICAN CHILD DEVELOPMENT CENTRE - SUNYANI
 Home Visitation Form — Digital Data Collection + PDF Report Generator
+(Mobile-friendly edition: single-column layout, everything is a plain
+checkbox — no dropdown / multiselect widgets — so it's easy to fill on a phone.)
 
 Run locally with:  streamlit run app.py
 Deploy on Streamlit Community Cloud by pushing this folder to a GitHub repo
-and pointing Streamlit Cloud at app.py (see README.md for details).
+(app.py AND logo.png together) and pointing Streamlit Cloud at app.py
+(see README.md for details).
 """
 
 import io
@@ -22,8 +25,20 @@ from fpdf import FPDF
 ORG_NAME = "ST. ANSELM'S ANGLICAN CHILD DEVELOPMENT CENTRE - SUNYANI"
 FORM_TITLE = "HOME VISITATION FORM"
 DB_PATH = "visitation_records.db"
+LOGO_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logo.png")
 
 st.set_page_config(page_title="St. Anselm's Home Visitation Form", page_icon="📋", layout="centered")
+
+
+def load_logo_bytes():
+    try:
+        with open(LOGO_PATH, "rb") as f:
+            return f.read()
+    except FileNotFoundError:
+        return None
+
+
+LOGO_BYTES = load_logo_bytes()
 
 # --------------------------------------------------------------------------
 # DATABASE (lightweight local storage so past reports can be re-downloaded)
@@ -118,7 +133,7 @@ class VisitationPDF(FPDF):
         self.set_y(-15)
         self.set_font("Helvetica", "I", 8)
         self.set_text_color(140, 140, 140)
-        self.cell(0, 10, f"Generated {datetime.now().strftime('%d %b %Y, %H:%M')}  |  Page {self.page_no()}", align="C")
+        self.cell(0, 10,Page {self.page_no()}", align="C")
 
 
 def checkbox(pdf: FPDF, checked: bool, size=4.2):
@@ -334,8 +349,14 @@ def build_pdf(data, logo_bytes=None) -> bytes:
 
 
 # --------------------------------------------------------------------------
-# STREAMLIT UI
+# STREAMLIT UI  (single-column layout, plain checkboxes — no dropdowns —
+# so it's comfortable to fill on a phone)
 # --------------------------------------------------------------------------
+
+if LOGO_BYTES:
+    st.image(LOGO_BYTES, width=110)
+else:
+    st.warning("Logo not found. Place a file named **logo.png** in the same folder as app.py.")
 
 st.title("📋 Home Visitation Form")
 st.caption(ORG_NAME)
@@ -347,92 +368,78 @@ with tab_new:
 
     with st.form("visitation_form", clear_on_submit=False):
         st.subheader("Child & Visit Identification")
-        c1, c2 = st.columns(2)
-        with c1:
-            child_name = st.text_input("Child's Name *")
-            date_of_visit = st.date_input("Date of Visit *", value=date.today())
-        with c2:
-            child_no = st.text_input("Child's No", value="GH 0761000")
-            cdw_name = st.text_input("Name of CDW / Volunteer *")
+        child_name = st.text_input("Child's Name *")
+        child_no = st.text_input("Child's No", value="GH 0761000")
+        date_of_visit = st.date_input("Date of Visit *", value=date.today())
+        cdw_name = st.text_input("Name of CDW / Volunteer *")
 
+        st.divider()
         st.subheader("Reason(s) for Visit")
-        rc1, rc2, rc3 = st.columns(3)
-        with rc1:
-            reason_absent = st.checkbox("Absent from project")
-            reason_absent_date = st.text_input("Absent date(s)", disabled=not reason_absent, key="rad")
-        with rc2:
-            reason_health = st.checkbox("Health")
-            reason_health_detail = st.text_input("Health details", disabled=not reason_health, key="rhd")
-        with rc3:
-            reason_other = st.checkbox("Any other")
-            reason_other_detail = st.text_input("Other details", disabled=not reason_other, key="rod")
+        st.caption("Tick all that apply")
+        reason_absent = st.checkbox("Absent from project")
+        reason_absent_date = st.text_input("Absent date(s)", disabled=not reason_absent, key="rad")
+        reason_health = st.checkbox("Health")
+        reason_health_detail = st.text_input("Health details", disabled=not reason_health, key="rhd")
+        reason_other = st.checkbox("Any other")
+        reason_other_detail = st.text_input("Other details", disabled=not reason_other, key="rod")
 
+        st.divider()
         st.subheader("How Was the Visit Conducted?")
-        visit_method = st.radio("Method", ["Telephone call", "Went to child's home"], horizontal=True,
+        visit_method = st.radio("Method", ["Telephone call", "Went to child's home"],
                                  label_visibility="collapsed")
         who_available = st.text_input("Who was available for the visit?")
         child_whereabouts = st.text_input("Child's whereabouts")
 
-        st.subheader("Reason for Not Coming to Project (if applicable)")
-        reason_not_coming = st.multiselect(
-            "Select all that apply",
-            ["Sick at home", "Went for Extra classes", "Child did not feel like coming",
-             "Was sent on an errand", "Travelled", "Others"],
-            label_visibility="collapsed",
-        )
-        nc1, nc2, nc3 = st.columns(3)
-        with nc1:
-            travel_where = st.text_input("If travelled, to where?")
-        with nc2:
-            date_of_return = st.text_input("Date of return")
-        with nc3:
-            others_specify = st.text_input("Others — specify")
+        st.divider()
+        st.subheader("Reason for Not Coming to Project")
+        st.caption("Tick all that apply (leave blank if not relevant)")
+        nc_options = ["Sick at home", "Went for Extra classes", "Child did not feel like coming",
+                      "Was sent on an errand", "Travelled", "Others"]
+        reason_not_coming = [opt for opt in nc_options if st.checkbox(opt, key=f"nc_{opt}")]
+        travel_where = st.text_input("If travelled, to where?")
+        date_of_return = st.text_input("Date of return")
+        others_specify = st.text_input("Others — specify")
 
+        st.divider()
         st.subheader("Is Child Ready to Come to Project Next Meeting?")
-        ready_next_meeting = st.radio("Ready?", ["Yes", "No", "Not Sure"], horizontal=True,
-                                       label_visibility="collapsed")
+        ready_next_meeting = st.radio("Ready?", ["Yes", "No", "Not Sure"], label_visibility="collapsed")
 
+        st.divider()
         st.subheader("Personal Basic Items Present")
-        personal_items = st.multiselect(
-            "Personal items",
-            ["Sponge / towel", "Bag for clothes", "Mat / mattress (may not be personal)",
-             "Toothbrush / paste", "Cup / spoon / plate", "Slipper / shoe"],
-            label_visibility="collapsed",
-        )
+        st.caption("Tick all that apply")
+        personal_options = ["Sponge / towel", "Bag for clothes", "Mat / mattress (may not be personal)",
+                             "Toothbrush / paste", "Cup / spoon / plate", "Slipper / shoe"]
+        personal_items = [opt for opt in personal_options if st.checkbox(opt, key=f"pi_{opt}")]
 
+        st.divider()
         st.subheader("Learning Condition of the Child")
-        learning_aids = st.multiselect(
-            "Learning aids",
-            ["Light source", "Reading books", "Child is able to do his/her homework",
-             "Child is able to learn on his/her own", "Child's academic condition has improved"],
-            label_visibility="collapsed",
-        )
+        st.caption("Tick all that apply")
+        learning_options = ["Light source", "Reading books", "Child is able to do his/her homework",
+                             "Child is able to learn on his/her own", "Child's academic condition has improved"]
+        learning_aids = [opt for opt in learning_options if st.checkbox(opt, key=f"la_{opt}")]
 
+        st.divider()
         st.subheader("Living Condition of the Child")
-        living_condition = st.multiselect(
-            "Living condition",
-            ["Eats at least 3 times a day", "Has good social behavior (i.e. respect)",
-             "Child has been a change in the family", "Child has access to TV in and around home",
-             "Child is able to do house chores"],
-            label_visibility="collapsed",
-        )
+        st.caption("Tick all that apply")
+        living_options = ["Eats at least 3 times a day", "Has good social behavior (i.e. respect)",
+                           "Child has been a change in the family", "Child has access to TV in and around home",
+                           "Child is able to do house chores"]
+        living_condition = [opt for opt in living_options if st.checkbox(opt, key=f"lc_{opt}")]
 
+        st.divider()
         st.subheader("Compassion Items Check")
-        compassion_items = st.multiselect(
-            "Compassion items",
-            ["Sponsor letters", "Sponsor gift items", "Compassion Bible", "Mosquito net"],
-            label_visibility="collapsed",
-        )
+        st.caption("Tick all that apply")
+        compassion_options = ["Sponsor letters", "Sponsor gift items", "Compassion Bible", "Mosquito net"]
+        compassion_items = [opt for opt in compassion_options if st.checkbox(opt, key=f"ci_{opt}")]
 
-        st.subheader("Follow-up")
-        followup_needed = st.radio("Is there a need for another follow-up visit?", ["Yes", "No"], horizontal=True)
+        st.divider()
+        st.subheader("Is There a Need for Another Follow-up Visit?")
+        followup_needed = st.radio("Follow-up", ["Yes", "No"], label_visibility="collapsed")
 
+        st.divider()
         st.subheader("Comments & Signature")
         comments = st.text_area("Any other comments (e.g. child's condition, appearance, behavior at home)")
         signature = st.text_input("CDW / Volunteer signature (type full name)")
-
-        logo_file = st.file_uploader("Optional: upload organisation logo for the PDF header (PNG/JPG)",
-                                      type=["png", "jpg", "jpeg"])
 
         submitted = st.form_submit_button("Generate Report ➜", use_container_width=True)
 
@@ -452,8 +459,7 @@ with tab_new:
                 compassion_items=compassion_items, followup_needed=followup_needed,
                 comments=comments, signature=signature,
             )
-            logo_bytes = logo_file.read() if logo_file else None
-            pdf_bytes = build_pdf(data, logo_bytes=logo_bytes)
+            pdf_bytes = build_pdf(data, logo_bytes=LOGO_BYTES)
 
             record_id = str(uuid.uuid4())
             save_record(record_id, data)
@@ -482,7 +488,7 @@ with tab_history:
                 st.write(f"**CDW/Volunteer:** {cdw}")
                 if st.button("Regenerate PDF", key=f"regen_{rid}"):
                     data = fetch_record(rid)
-                    pdf_bytes = build_pdf(data)
+                    pdf_bytes = build_pdf(data, logo_bytes=LOGO_BYTES)
                     fname = f"{cname.replace(' ', '_')}_{dov}.pdf"
                     st.download_button("⬇️ Download PDF", data=pdf_bytes, file_name=fname,
                                         mime="application/pdf", key=f"dl_{rid}")
