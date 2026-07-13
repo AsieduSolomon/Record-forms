@@ -352,7 +352,7 @@ with tab_new:
             child_name = st.text_input("Child's Name *")
             date_of_visit = st.date_input("Date of Visit *", value=date.today())
         with c2:
-            child_no = st.text_input("Child's No", value="GH 0761-")
+            child_no = st.text_input("Child's No", value="GH 0761000")
             cdw_name = st.text_input("Name of CDW / Volunteer *")
 
         st.subheader("Reason(s) for Visit")
